@@ -1,10 +1,10 @@
-# DashCash Useful MVP Dashboard Implementation Plan
+# DashCash India-First Small Business Finance Hub Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build a useful, honest MVP for broad local small businesses: owners sign in, set up one business, manually track categorized income/expenses, and use a polished dashboard to understand their cash flow.
+**Goal:** Build DashCash into an India-first small-business finance hub that helps owners manage cash, receivables, payables and budgets, understand what needs attention, and take action—without pretending to be a bank or a full accounting/tax system.
 
-**Architecture:** Keep React + Vite on Cloudflare Pages and use Cloudflare Pages Functions for server endpoints, Better Auth for Google authentication/session handling, and Cloudflare D1 for user/business/transaction persistence. The dashboard remains the visual product experience reflected by the landing preview, but every displayed number/list/chart is computed from the signed-in user's stored transactions—never mock sample values. Keep domain calculations isolated and tested; enforce ownership in server queries/schema, not just frontend filtering.
+**Architecture:** Keep React + Vite on Cloudflare Pages; use Pages Functions, Better Auth, and D1 for secure accounts and persistence. Organize the product as related modules—Overview, Sales & Invoices, Expenses & Bills, Cash Flow, Budgets, Reports, and Settings—sharing business, customer/vendor, category, invoice, bill, and payment records. The overview summarizes real saved data and highlights actionable items (overdue invoices, upcoming bills, budget exceptions, and unusual cash-flow changes); it never shows invented figures. Build in vertical slices so each module works end-to-end before adding the next. India-specific currency/date defaults are included; GST/tax calculations are explicitly excluded pending accounting/legal review.
 
 **Tech Stack:** React + Vite + JavaScript; Cloudflare Pages Functions; Better Auth; Cloudflare D1; Node built-in test runner.
 
@@ -12,8 +12,10 @@
 
 - Hosting and Git deployment: Cloudflare Pages via GitHub `main`.
 - Auth/data stack: Better Auth + Cloudflare Pages Functions + D1; do not use Clerk or Supabase.
-- Initial MVP: one owner, one business, one currency per account; manual transactions only.
-- No bank integrations, CSV import, recurring transactions, payment processing, or accounting/tax claims in this MVP.
+- Initial product: India-first, INR as the default currency, one owner/business per account; other currencies remain selectable for legitimate needs.
+- Core modules: transaction ledger; sales invoices and payment status; bills/payables and due dates; budgets/targets; reports and CSV export; actionable overview.
+- No bank integrations or payment processing in the first release. CSV import is deferred until manual data model and duplicate handling are stable.
+- Do not calculate GST, file taxes, or claim accounting-grade compliance in the initial release; keep tax fields informational only if later approved.
 - Store money as integer minor units with explicit currency; never use floats as the source of truth.
 - Store transaction dates as date-only values and calculate periods using a documented business timezone convention.
 - Every read/write must scope to the authenticated user's owned business; enforce on the server and in database constraints/queries.
@@ -24,11 +26,13 @@
 
 ## Product Decisions (Confirmed)
 
-1. Dashboard priority: cash-flow control; planning and business snapshot ideas are future enhancements.
-2. Persistence: real accounts and cloud storage using Better Auth + D1.
-3. Transaction entry: manual categorized income/expense records.
-4. Target: broad local small business, not café-only; categories and wording must fit retail and service businesses.
-5. Explicitly defer CSV import and recurring items.
+1. Product positioning: India-first business finance hub; not a generic transaction notebook.
+2. Core outcome: know cash position from recorded activity, track money customers owe and bills due, monitor budgets, and see the next action.
+3. Persistence: real accounts and cloud storage using Better Auth + D1.
+4. Initial workflow: manually recorded categorized transactions; invoices and bills create/settle corresponding ledger entries without double counting.
+5. Market: Indian small businesses; INR default and India number/date formatting. Do not assume every user is GST registered.
+6. Core modules in staged delivery: Overview + ledger; invoices/receivables; bills/payables; budgets; reports/export.
+7. Explicitly defer bank feeds, payment processing, CSV import, recurring automation and GST/tax computation.
 6. One business/currency per account for initial release; confirm email verification and deletion/export/support expectations before public launch.
 
 ---
@@ -175,14 +179,84 @@
 - [ ] Deploy using GitHub-connected Cloudflare Pages; verify successful build/deploy stages and smoke-test production domain.
 - [ ] Confirm user-facing copy does not call temporary demo or manual records a bank balance, accounting system, or financial advice.
 
-## Out of Scope
+## Execution Order (Implementation Plan)
 
-- Bank feeds, CSV import, recurring transactions, invoice/accounting functionality, reconciliation, payroll/inventory, multi-business/team accounts, tax calculations/advice, and AI-generated financial advice.
+Build the product as four independently useful releases; each release must pass tests/build before the next begins. Do not attempt to ship every module in one risky change.
+
+### Phase 1 — Real cash ledger + actionable overview (implement first)
+
+1. Define/test domain model for transactions, customers/vendors references, invoice/bill settlement hooks, INR formatting and period calculations.
+2. Replace monolithic product flow with route-level modules and a consistent responsive app shell; preserve landing page.
+3. Deliver ledger workflow: create/edit/delete categorized income/expense, search/filter/date range, clear empty/loading/error states, and persistent prototype storage explicitly labelled as browser-only until D1 is configured.
+4. Deliver overview with period totals, real-entry trend/category analysis, recent activity and quick actions; empty states contain no invented financial content.
+5. Add India-first currency default, including INR/Indian digit grouping; retain user currency choices.
+6. Add CSV export and basic settings/data explanation; test export escaping/formula injection.
+7. Verify desktop/mobile navigation and workflows; run tests/build; deploy to Pages; keep auth/data claims honest.
+
+### Phase 2 — Invoices and receivables
+
+1. Test invoice/payment/status domain rules, including partial payments, due/overdue boundaries, and cash-vs-receivable separation.
+2. Add customer and invoice list/detail/create/edit workflows with line items, due date, status, record-payment flow, overdue action list and printable/send-ready output.
+3. Ensure received payments appear once in cash totals; unpaid invoice value is shown separately as receivable.
+4. Add persistence/API schema only after auth/D1 availability and ownership tests.
+
+### Phase 3 — Bills and payables
+
+1. Test vendor/bill/payment rules including partial payment, due/overdue and expense recognition dates.
+2. Add vendor/bill workflows and upcoming/overdue obligations, without treating unpaid bills as historical cash expenses.
+3. Surface payables on overview as due actions, separate from actual cash outflow.
+
+### Phase 4 — Budgets and reports
+
+1. Test category-period budgets and actual-vs-plan calculations, including no-data cases.
+2. Add targets, threshold alerts, month/category reports and CSV exports.
+3. Label comparison periods and require sufficient real entries; do not invent trend percentages.
+
+### Shared release gates
+
+- Preserve product visual consistency and responsive accessibility across every new module.
+- No fake examples in signed-in product views. Demo/illustrative content must be explicitly labeled and opt-in.
+- Cloud persistence/auth rollout is gated on Better Auth + D1 configuration and cross-user authorization tests. Until available, prototype persistence must be clearly disclosed and must not be described as accounts/cloud saves.
+- Never imply GST compliance, bank synchronization, payment processing, or accounting/tax advice.
+
+## Product Roadmap and Module Boundaries
+
+### Release 1 — Real cash ledger and actionable overview
+
+- Auth, one-business onboarding, manual income/expense ledger with categories, search/filter/edit/delete.
+- Overview: selected-period money in/out/net, real-data trend, recent activity, expense-category breakdown, and clear empty states.
+- CSV export and essential settings/data support path.
+
+### Release 2 — Sales and receivables
+
+- Customer directory (minimal contact details), invoice create/edit/send-ready PDF, line items, due date, status (draft/sent/part-paid/paid/overdue/cancelled), payment recording and reminders/tasks.
+- Invoice amounts and payments flow into cash reporting only when received; outstanding invoices are shown as receivables, never mislabeled as cash.
+- Tax fields only if required, configurable and informational; no GST rate recommendation or filing.
+
+### Release 3 — Bills and payables
+
+- Vendor directory, bill amount/due date/category/status, partial payments, upcoming/overdue queue, and cash-flow obligation view.
+- Payments become expenses on payment date; unpaid bills appear as obligations, not historical cash outflow.
+
+### Release 4 — Budgets and management reports
+
+- Monthly category targets, actual-vs-budget, threshold warnings, monthly comparisons, income/expense/category reports, CSV export.
+- Comparisons and alerts require sufficient real data; label basis and period and avoid false precision.
+
+### Explicit later/never-by-default scope
+
+- Bank feeds, payment processing, CSV import, recurring automation, payroll/inventory, multi-business/team accounts, GST/tax computation or filing, accounting reconciliation, and AI-generated financial advice. Revisit only with validated demand, secure provider choices, and qualified compliance review.
+
+## Out of Scope for Initial Release
+
+- Bank feeds, payment processing, CSV import, recurring automation, payroll/inventory, multi-business/team accounts, GST/tax computation or filing, and AI-generated financial advice.
 
 ## Acceptance Criteria
 
-- An owner can authenticate, configure one business, enter/edit/delete categorized manual income/expense records, and see them after reload.
-- Dashboard totals, period filters, recent activity and trend are calculated exclusively from owned saved records; blank accounts show honest zeros and an empty chart/list.
+- An owner can authenticate, configure one India-first business (INR default), enter/edit/delete categorized transactions, and see them after reload.
+- Release 1 is a cohesive, useful first slice: searchable/filterable ledger; selected-period overview; honest trend and category breakdown; quick actions; export path.
+- Follow-on module plan specifies end-to-end invoices/receivables, bills/payables, budgets and reports, with correct cash-vs-accrual distinctions and no double counting.
+- Overview totals, period filters, activity, charts, category insights and any alerts are derived exclusively from authorized stored records; blank accounts show honest empty states.
 - Visual hierarchy/layout mirrors the landing-page dashboard mockup, with real app behavior and no pasted mockup data.
 - Unauthorized and cross-user access are rejected by server/database behavior, not frontend hiding.
 - Money is integer minor units, currency is explicit, and date periods have tested boundaries.
