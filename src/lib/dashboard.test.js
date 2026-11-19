@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { getDashboardMetrics } from './dashboard.js';
 
-test('dashboard metrics match the landing preview with sample transactions', () => {
-  assert.deepEqual(getDashboardMetrics([]), { incomeMinor: 1284000, expenseMinor: 428650, netMinor: 855350 });
+test('dashboard metrics are zero when there are no user transactions', () => {
+  assert.deepEqual(getDashboardMetrics([]), { incomeMinor: 0, expenseMinor: 0, netMinor: 0 });
 });
 
 test('dashboard metrics recompute from manual transaction entries', () => {
